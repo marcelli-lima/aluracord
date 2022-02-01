@@ -1,7 +1,8 @@
 # Aluracord
 ## Projeto Discord - Imersão Alura
 
-![Capa do Projeto]()
+![1305dcf4-d6af-4422-a0cf-4f514a6c1e56](https://user-images.githubusercontent.com/87941765/151897358-152b929a-3933-4fa7-a474-968021114c32.jpg)
+
 
 ### Conteúdo detalhado 
 
