@@ -70,7 +70,7 @@ const roteamento = useRouter();
             onSubmit={function (infosDoEvento){
               infosDoEvento.preventDefault();
               console.log("alguem submeteu")
-              roteamento.push("/chat");
+              roteamento.push(`/chat?username=${username}`);
               // window.location.href = "/chat"
             }}
             styleSheet={{

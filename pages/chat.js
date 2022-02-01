@@ -2,15 +2,29 @@ import { Box, Text, TextField, Image, Button } from '@skynexui/components';
 import React from 'react';
 import appConfig from '../config.json';
 import { createClient } from "@supabase/supabase-js"
+import {useRouter} from 'next/router'
+import {ButtonSendSticker} from '../src/componentes/ButtonSendSticker'
 
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MzQ3Mjg2MCwiZXhwIjoxOTU5MDQ4ODYwfQ.xfduBnfto-ZarBsTX6KHgl6BQcFmLX0FStoJ0K5bLAk"
 const SUPABASE_URL = "https://zbvbilmwkuctnsxokcan.supabase.co"
 const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
+function escutaMensagensEmTempoReal(adicionaMensagem) {
+  return supabaseClient
+  .from("mensagens")
+  .on("INSERT", (respostaLive) => {
+    adicionaMensagem(respostaLive.new)
+  })
+  .subscribe();
+}
 
 export default function ChatPage() {
-  const [mensagem, setMensagem] = React.useState("");
-  const [listaDeMensagens, setListaDeMensagens] = React.useState([]);
+  const roteamento = useRouter();
+  const usuarioLogado = roteamento.query.username;
+   const [mensagem, setMensagem] = React.useState("");
+  const [listaDeMensagens, setListaDeMensagens] = React.useState([
+
+  ]);
   // Sua lógica vai aqui
   React.useEffect(() => {
     supabaseClient
@@ -18,15 +32,37 @@ export default function ChatPage() {
     .select("*")
     .order("id", {ascending: false})
     .then(({data}) => {
-    console.log("dados da consulta:", data);
+    // console.log("dados da consulta:", data);
     setListaDeMensagens(data);
-    })
-  }, [])
+    });
+    const subscription = escutaMensagensEmTempoReal((novaMensagem) => {
+      console.log('Nova mensagem:', novaMensagem);
+      console.log('listaDeMensagens:', listaDeMensagens);
+      // Quero reusar um valor de referencia (objeto/array) 
+      // Passar uma função pro setState
+
+      // setListaDeMensagens([
+      //     novaMensagem,
+      //     ...listaDeMensagens
+      // ])
+      setListaDeMensagens((valorAtualDaLista) => {
+        console.log('valorAtualDaLista:', valorAtualDaLista);
+        return [
+          novaMensagem,
+          ...valorAtualDaLista,
+        ]
+      });
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    }
+  }, []);
   // ./Sua lógica vai aqui
   function handleNovaMensagem(novaMensagem) {
     const mensagem = {
       //id: listaDeMensagens.length + 1,
-      de: "marcelli-lima",
+      de:usuarioLogado ,
       texto: novaMensagem,
     }
     supabaseClient
@@ -37,10 +73,7 @@ export default function ChatPage() {
     ])
     .then(({data}) => {
       console.log("criando mensagem:", data[0] )
-      setListaDeMensagens([
-        data[0],
-        ...listaDeMensagens
-      ]);
+
     })
 
     setMensagem("");
@@ -124,6 +157,11 @@ export default function ChatPage() {
                 color: appConfig.theme.colors.neutrals[200],
               }}
             />
+            <ButtonSendSticker
+            onStickerClick={(sticker) => {
+              // console.log("SANDO O COMPONENTE salvar esse sticker nno banco", sticker);
+              handleNovaMensagem(":sticker:" + sticker)
+            }} />
           </Box>
         </Box>
       </Box>
@@ -150,7 +188,7 @@ function Header() {
 }
 
 function MessageList(props) {
-  console.log(props);
+  //console.log(props);
   return (
       <Box
           tag="ul"
@@ -206,7 +244,20 @@ function MessageList(props) {
                               {(new Date().toLocaleDateString())}
                           </Text>
                       </Box>
-                      {mensagem.texto}
+            {/* [Declarativo] */}
+            {/* Condicional: {mensagem.texto.startsWith(':sticker:').toString()} */}
+            {mensagem.texto.startsWith(':sticker:')
+              ? (
+                <Image src={mensagem.texto.replace(':sticker:', '')} />
+              )
+              : (
+                mensagem.texto
+              )}
+            {/* if mensagem de texto possui stickers:
+                           mostra a imagem
+                        else 
+                           mensagem.texto */}
+            {/* {mensagem.texto} */}
                   </Text>
               );
           })}
